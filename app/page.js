@@ -1,95 +1,67 @@
-import Image from "next/image";
+"use client";
+
+import Pusher from "pusher-js";
 import styles from "./page.module.css";
+import { useEffect } from "react";
+import axios from "axios";
+
+export const pusher = new Pusher(process.env.NEXT_PUBLIC_PUSHER_KEY, {
+  userAuthentication: {
+    // endpoint: `${process.env.NEXT_PUBLIC_SERVER}/pusher/authentication`,
+    endpoint: `/api/pusher/authentication`,
+    params: {
+      userId: "1",
+    },
+  },
+  channelAuthorization: {
+    endpoint: `api/pusher/authorization`,
+    params: {
+      userId: +(Math.random() * 10).toFixed(0),
+    },
+  },
+  cluster: process.env.NEXT_PUBLIC_PUSHER_CLUSTER,
+});
+
+const handlePublicEventTrigger = async () => {
+  const socketId = pusher.connection.socket_id;
+  return await axios.post(
+    `${process.env.NEXT_PUBLIC_SERVER}/pusher/picking-trigger?socket_id=${socketId}`
+  );
+};
+
+const handlePrivateEventTrigger = async () => {
+  const socketId = pusher.connection.socket_id;
+  return await axios.post(
+    `${process.env.NEXT_PUBLIC_SERVER}/pusher/refunds-trigger?socket_id=${socketId}`
+  );
+};
 
 export default function Home() {
+  useEffect(() => {
+    pusher.signin();
+    const pickingChannel = pusher.subscribe("picking-channel");
+    pickingChannel.bind("updated-picking-list", (data) => {
+      alert(data.message);
+    });
+    const refundsChannel = pusher.subscribe("private-refunds-channel");
+    refundsChannel.bind("added-refund", (data) => {
+      alert(data.message);
+    });
+    return () => {
+      pusher.unsubscribe("picking-channel");
+      pusher.unsubscribe("private-refunds-channel");
+    };
+  }, []);
+
   return (
     <main className={styles.main}>
-      <div className={styles.description}>
-        <p>
-          Get started by editing&nbsp;
-          <code className={styles.code}>app/page.js</code>
-        </p>
-        <div>
-          <a
-            href="https://vercel.com?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            By{" "}
-            <Image
-              src="/vercel.svg"
-              alt="Vercel Logo"
-              className={styles.vercelLogo}
-              width={100}
-              height={24}
-              priority
-            />
-          </a>
-        </div>
-      </div>
-
-      <div className={styles.center}>
-        <Image
-          className={styles.logo}
-          src="/next.svg"
-          alt="Next.js Logo"
-          width={180}
-          height={37}
-          priority
-        />
-      </div>
-
-      <div className={styles.grid}>
-        <a
-          href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          className={styles.card}
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2>
-            Docs <span>-&gt;</span>
-          </h2>
-          <p>Find in-depth information about Next.js features and API.</p>
-        </a>
-
-        <a
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          className={styles.card}
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2>
-            Learn <span>-&gt;</span>
-          </h2>
-          <p>Learn about Next.js in an interactive course with&nbsp;quizzes!</p>
-        </a>
-
-        <a
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          className={styles.card}
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2>
-            Templates <span>-&gt;</span>
-          </h2>
-          <p>Explore starter templates for Next.js.</p>
-        </a>
-
-        <a
-          href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          className={styles.card}
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2>
-            Deploy <span>-&gt;</span>
-          </h2>
-          <p>
-            Instantly deploy your Next.js site to a shareable URL with Vercel.
-          </p>
-        </a>
-      </div>
+      TEST PUSHER
+      <button className={styles.card} onClick={handlePublicEventTrigger}>
+        Trigger public event
+      </button>
+      <button className={styles.card} onClick={handlePrivateEventTrigger}>
+        Trigger private event
+      </button>
     </main>
   );
 }
