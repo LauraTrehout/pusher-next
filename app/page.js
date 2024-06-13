@@ -7,7 +7,6 @@ import axios from "axios";
 
 export const pusher = new Pusher(process.env.NEXT_PUBLIC_PUSHER_KEY, {
   userAuthentication: {
-    // endpoint: `${process.env.NEXT_PUBLIC_SERVER}/pusher/authentication`,
     endpoint: `/api/pusher/authentication`,
     params: {
       userId: "1",
@@ -41,11 +40,11 @@ export default function Home() {
     pusher.signin();
     const pickingChannel = pusher.subscribe("picking-channel");
     pickingChannel.bind("updated-picking-list", (data) => {
-      alert(data.message);
+      console.log(data.message);
     });
     const refundsChannel = pusher.subscribe("private-refunds-channel");
     refundsChannel.bind("added-refund", (data) => {
-      alert(data.message);
+      console.log(data.message);
     });
     return () => {
       pusher.unsubscribe("picking-channel");
